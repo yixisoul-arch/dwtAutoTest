@@ -1,0 +1,4 @@
+projectName: DwtAutoTest
+logLevel: info
+retryCount: 1
+timeout: 10000

@@ -1,0 +1,4 @@
+outputDir: reports
+formats:
+  - json
+  - md

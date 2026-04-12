@@ -1,0 +1,4 @@
+baseUrl: "${API_BASE_URL}"
+timeout: 10000
+defaultHeaders:
+  Content-Type: application/json

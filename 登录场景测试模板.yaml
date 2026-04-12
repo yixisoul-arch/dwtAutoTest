@@ -1,0 +1,68 @@
+caseId: TC_LOGIN_001
+caseName: 用户登录成功
+description: 验证用户输入正确账号密码后可以成功登录系统并跳转首页
+tags:
+  - login
+  - smoke
+  - web
+priority: P0
+mode: hybrid
+config:
+  retryCount: 1
+  timeout: 10000
+  screenshotOnFail: true
+  stopOnFailure: true
+variables:
+  username: test_user
+  password: test_pass
+
+beforeActions: []
+
+mainSteps:
+  - id: step_01
+    type: web_open
+    name: 打开登录页
+    params:
+      url: "/login"
+
+  - id: step_02
+    type: web_input
+    name: 输入用户名
+    params:
+      target: "用户名输入框"
+      value: "${username}"
+
+  - id: step_03
+    type: web_input
+    name: 输入密码
+    params:
+      target: "密码输入框"
+      value: "${password}"
+
+  - id: step_04
+    type: web_click
+    name: 点击登录按钮
+    params:
+      target: "登录按钮"
+
+assertions:
+  - id: assert_01
+    type: web_assert_url
+    name: 校验跳转首页
+    params:
+      expected: "/home"
+
+  - id: assert_02
+    type: web_assert_text
+    name: 校验欢迎语存在
+    params:
+      target: "欢迎区域"
+      expected: "欢迎登录"
+
+  - id: assert_03
+    type: web_screenshot
+    name: 保存登录成功截图
+    params:
+      fileName: "login_success.png"
+
+afterActions: []

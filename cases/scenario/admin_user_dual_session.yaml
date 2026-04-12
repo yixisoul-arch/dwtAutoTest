@@ -1,0 +1,62 @@
+caseId: TC_ADMIN_USER_DUAL_001
+caseName: 同一用例支持 admin 与 user 双会话登录
+description: 验证同一个测试用例中可同时保留 admin 和 user 两个独立浏览器会话，并分别执行登录与页面断言
+tags:
+  - login
+  - admin
+  - user
+  - web
+priority: P1
+mode: hybrid
+config:
+  retryCount: 1
+  timeout: 30000
+  screenshotOnFail: true
+  stopOnFailure: true
+variables:
+  adminAccount:
+    username: "13549508100"
+    password: "XX431022."
+  userAccount:
+    username: "1907486821@qq.com"
+    password: "XX431022."
+
+beforeActions: []
+
+mainSteps:
+  - use: common/web_login
+    with:
+      session: admin
+      site: admin
+      username: "${adminAccount.username}"
+      password: "${adminAccount.password}"
+      url: "#/login"
+
+  - use: common/web_login
+    with:
+      session: user
+      site: user
+      username: "${userAccount.username}"
+      password: "${userAccount.password}"
+      url: "#/login?redirect=%2Fdashboard"
+
+assertions:
+  - id: assert_admin_login_page
+    type: web_assert_url
+    name: 校验 admin 会话仍位于 admin 站点
+    params:
+      session: admin
+      site: admin
+      expected: "#/login"
+      timeout: 10000
+
+  - id: assert_user_dashboard_page
+    type: web_assert_url
+    name: 校验 user 会话执行用户侧断言
+    params:
+      session: user
+      site: user
+      expected: "#/dashboard"
+      timeout: 30000
+
+afterActions: []

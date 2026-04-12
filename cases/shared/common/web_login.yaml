@@ -1,0 +1,46 @@
+sharedId: common/web_login
+description: 通用网页登录流程
+params:
+  session:
+    default: default
+  username:
+    required: true
+  password:
+    required: true
+  site:
+    default: user
+  url:
+    default: "#/login?redirect=%2Fdashboard"
+
+phases:
+  mainSteps:
+    - id: open_login
+      type: web_open
+      name: 打开登录页
+      params:
+        session: "${session}"
+        site: "${site}"
+        url: "${url}"
+
+    - id: input_username
+      type: web_input
+      name: 输入用户名
+      params:
+        session: "${session}"
+        target: "用户名输入框"
+        value: "${username}"
+
+    - id: input_password
+      type: web_input
+      name: 输入密码
+      params:
+        session: "${session}"
+        target: "密码输入框"
+        value: "${password}"
+
+    - id: click_login
+      type: web_click
+      name: 点击登录按钮
+      params:
+        session: "${session}"
+        target: "登录按钮"

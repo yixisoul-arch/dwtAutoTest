@@ -1,0 +1,17 @@
+username:
+  strategy: css
+  value: 'input[placeholder="请输入您的手机号或邮箱"]:visible'
+password:
+  strategy: css
+  value: 'input[placeholder="请输入您的登录密码"]:visible'
+submit:
+  strategy: css
+  value: 'button[type="submit"]:visible'
+welcome:
+  strategy: css
+  value: 'body'
+aliases:
+  用户名输入框: username
+  密码输入框: password
+  登录按钮: submit
+  欢迎区域: welcome

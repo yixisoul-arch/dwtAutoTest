@@ -1,0 +1,17 @@
+amount:
+  strategy: css
+  value: '[data-testid="trade-amount"]'
+currency:
+  strategy: css
+  value: '[data-testid="trade-currency"]'
+submit:
+  strategy: css
+  value: '[data-testid="trade-submit"]'
+message:
+  strategy: css
+  value: '[data-testid="trade-message"]'
+aliases:
+  交易金额输入框: amount
+  币种下拉框: currency
+  提交交易按钮: submit
+  页面提示: message

@@ -1,0 +1,11 @@
+baseUrls:
+  user: "${WEB_USER_BASE_URL}"
+  admin: "${WEB_ADMIN_BASE_URL}"
+defaultSite: user
+headless: false
+narrate: false
+navigationTimeout: 30000
+screenshotDir: screenshots
+locatorFiles:
+  - config/locators/login.yaml
+  - config/locators/trade.yaml

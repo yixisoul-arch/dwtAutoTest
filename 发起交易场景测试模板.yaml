@@ -1,0 +1,153 @@
+caseId: TC_LOGIN_TRADE_001
+caseName: 登录后发起交易并校验数据库
+description: 登录系统后发起一笔交易，校验页面成功、接口成功、数据库生成交易记录，并在结束后清理测试数据
+tags:
+  - login
+  - trade
+  - regression
+  - web
+  - api
+  - db
+priority: P0
+mode: hybrid
+config:
+  retryCount: 1
+  timeout: 10000
+  screenshotOnFail: true
+  stopOnFailure: true
+variables:
+  username: test_user
+  password: test_pass
+  tradeAmount: 100
+  currency: CNY
+
+beforeActions:
+  - id: before_01
+    type: db_cleanup
+    name: 清理旧测试交易数据
+    params:
+      sql: "DELETE FROM trade_order WHERE test_flag = 'Y'"
+
+  - id: before_02
+    type: db_init
+    name: 初始化测试账户数据
+    params:
+      sql: "UPDATE user_account SET balance = 100000 WHERE user_id = 10001"
+
+mainSteps:
+  - id: step_01
+    type: web_open
+    name: 打开登录页
+    params:
+      url: "/login"
+
+  - id: step_02
+    type: web_input
+    name: 输入用户名
+    params:
+      target: "用户名输入框"
+      value: "${username}"
+
+  - id: step_03
+    type: web_input
+    name: 输入密码
+    params:
+      target: "密码输入框"
+      value: "${password}"
+
+  - id: step_04
+    type: web_click
+    name: 点击登录按钮
+    params:
+      target: "登录按钮"
+
+  - id: step_05
+    type: web_assert_url
+    name: 校验跳转首页
+    params:
+      expected: "/home"
+
+  - id: step_06
+    type: web_open
+    name: 打开交易页面
+    params:
+      url: "/trade/create"
+
+  - id: step_07
+    type: web_input
+    name: 输入交易金额
+    params:
+      target: "交易金额输入框"
+      value: "${tradeAmount}"
+
+  - id: step_08
+    type: web_select
+    name: 选择币种
+    params:
+      target: "币种下拉框"
+      value: "${currency}"
+
+  - id: step_09
+    type: web_click
+    name: 点击提交交易按钮
+    params:
+      target: "提交交易按钮"
+
+  - id: step_10
+    type: web_assert_text
+    name: 校验页面提示提交成功
+    params:
+      target: "页面提示"
+      expected: "提交成功"
+
+  - id: step_11
+    type: api_call
+    name: 调用查询交易结果接口
+    params:
+      method: GET
+      url: "/api/trade/latest"
+      query:
+        userName: "${username}"
+      headers:
+        Authorization: "Bearer ${context.token}"
+    extract:
+      tradeId: "$.data.tradeId"
+      tradeNo: "$.data.tradeNo"
+      code: "$.code"
+
+assertions:
+  - id: assert_01
+    type: api_assert_field
+    name: 校验交易接口返回码
+    params:
+      field: "$.code"
+      expected: 0
+
+  - id: assert_02
+    type: db_assert
+    name: 校验数据库中存在交易记录
+    params:
+      sql: "SELECT count(*) AS cnt FROM trade_order WHERE trade_id = '${context.tradeId}'"
+      expected:
+        cnt: 1
+
+  - id: assert_03
+    type: db_assert
+    name: 校验交易金额正确
+    params:
+      sql: "SELECT amount FROM trade_order WHERE trade_id = '${context.tradeId}'"
+      expected:
+        amount: 100
+
+  - id: assert_04
+    type: web_screenshot
+    name: 保存交易成功截图
+    params:
+      fileName: "trade_success.png"
+
+afterActions:
+  - id: after_01
+    type: db_cleanup
+    name: 清理交易测试数据
+    params:
+      sql: "DELETE FROM trade_order WHERE trade_id = '${context.tradeId}'"
