@@ -79,6 +79,7 @@ export class Executor {
     const startedAt = new Date();
 
     try {
+      await this.delayBeforeStep(testCase);
       const envDefaults = Object.fromEntries(
         Object.entries(process.env).filter(([, value]) => value !== undefined),
       ) as Record<string, unknown>;
@@ -127,6 +128,32 @@ export class Executor {
         error: coerceError(error),
       };
     }
+  }
+
+  protected async delayBeforeStep(testCase: TestCaseDefinition): Promise<void> {
+    const delayMs = this.pickStepDelayMs(testCase);
+    if (delayMs <= 0) {
+      return;
+    }
+
+    await this.sleep(delayMs);
+  }
+
+  protected pickStepDelayMs(testCase: TestCaseDefinition): number {
+    const stepDelayMs = testCase.config?.stepDelayMs;
+    if (!stepDelayMs) {
+      return 0;
+    }
+
+    if (stepDelayMs.min === stepDelayMs.max) {
+      return stepDelayMs.min;
+    }
+
+    return Math.floor(Math.random() * (stepDelayMs.max - stepDelayMs.min + 1)) + stepDelayMs.min;
+  }
+
+  protected async sleep(ms: number): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private applyExtract(step: StepDefinition, output: unknown, context: ExecutionContext): void {

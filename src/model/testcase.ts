@@ -23,11 +23,17 @@ export interface SharedStepParamDefinition {
 
 export type PhaseItem = StepDefinition | SharedStepReference;
 
+export interface StepDelayRange {
+  min: number;
+  max: number;
+}
+
 export interface TestCaseConfig {
   retryCount?: number;
   timeout?: number;
   screenshotOnFail?: boolean;
   stopOnFailure?: boolean;
+  stepDelayMs?: StepDelayRange;
 }
 
 export interface RawTestCaseDefinition {

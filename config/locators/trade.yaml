@@ -10,8 +10,119 @@ submit:
 message:
   strategy: css
   value: '[data-testid="trade-message"]'
+userPaymentCreate:
+  strategy: css
+  value: 'button:has-text("创建付款单")'
+userPaymentTradeNoSearch:
+  strategy: css
+  value: 'input[placeholder="交易编号"]'
+userPaymentSearch:
+  strategy: css
+  value: 'button.common-search-bar__button.common-search-bar__button--search.el-button--default.el-button--small.is-plain.is-round:has-text("搜索")'
+userPaymentPayeeSelect:
+  strategy: css
+  value: '.el-dialog__wrapper:has-text("付款申请") .el-form-item:nth-of-type(1) .el-select .el-input__suffix'
+userPaymentPayeeTanxingweiOption:
+  strategy: css
+  value: '.el-select-dropdown:visible .el-select-dropdown__item span:text-is("6217****2880 - 银行名称 - 谭兴卫")'
+userPaymentAssetSelect:
+  strategy: css
+  value: '.el-dialog__wrapper:has-text("付款申请") .el-form-item:nth-of-type(2) .el-select .el-input__inner'
+userPaymentAmountInput:
+  strategy: css
+  value: '.el-dialog__wrapper:has-text("付款申请") .el-form-item:nth-of-type(3) input[type="number"]'
+userPaymentRemarkInput:
+  strategy: css
+  value: '.el-dialog__wrapper:has-text("付款申请") textarea'
+userPaymentCodeInput:
+  strategy: css
+  value: '.el-dialog__wrapper:has-text("付款申请") input[placeholder="请输入邮箱验证码"]'
+userPaymentSendCode:
+  strategy: css
+  value: '.el-dialog__wrapper:has-text("付款申请") button:has-text("获取验证码")'
+userPaymentSubmit:
+  strategy: css
+  value: '.el-dialog__wrapper:has-text("付款申请") button:has-text("提 交 申 请")'
+userPaymentFirstTradeNoText:
+  strategy: css
+  value: '.el-table__body-wrapper tbody tr:first-child td:nth-child(2) .cell:visible'
+userPaymentStatusText:
+  strategy: css
+  value: '.el-table__body-wrapper tbody tr:first-child td:nth-child(8) .cell:visible'
+adminCashTradeNoSearch:
+  strategy: css
+  value: 'input[placeholder="交易编号"]'
+adminCashSearch:
+  strategy: css
+  value: 'button:has-text("搜索")'
+adminCashRowMore:
+  strategy: css
+  value: '.el-table__body-wrapper tbody tr:first-child .el-icon-more'
+adminCashReviewAction:
+  strategy: css
+  value: '.el-dropdown-menu:visible button:has-text("付款审核")'
+adminCashUploadResultAction:
+  strategy: css
+  value: '.el-dropdown-menu:visible button:has-text("上传结果")'
+adminCashFirstTradeNoText:
+  strategy: css
+  value: '.el-table__body-wrapper tbody tr:first-child td:nth-child(3) .cell:visible'
+adminCashStatusText:
+  strategy: css
+  value: '.el-table__body-wrapper tbody tr:first-child td:nth-child(9) .cell:visible'
+adminCashApproveButton:
+  strategy: css
+  value: '.el-dialog__wrapper:visible button.el-button--success:has-text("通过")'
+adminCashApproveConfirm:
+  strategy: css
+  value: 'button.el-button--primary:has-text("确认"):visible'
+adminCashSuccessButton:
+  strategy: css
+  value: '.el-dialog__wrapper:visible button:has-text("付款成功")'
+adminCashSuccessConfirm:
+  strategy: css
+  value: 'button.el-button--primary:has-text("确认"):visible'
+adminSystemMenu:
+  strategy: css
+  value: '.sidebar-container'
+adminSystemLogTargetInput:
+  strategy: css
+  value: 'input[placeholder="目标号码"]'
+adminSystemLogSearch:
+  strategy: css
+  value: 'button:has-text("搜索")'
+adminSystemLogContentText:
+  strategy: css
+  value: '.el-table__body-wrapper.is-scrolling-none tbody tr:first-child td:nth-child(5) .cell'
 aliases:
   交易金额输入框: amount
   币种下拉框: currency
   提交交易按钮: submit
   页面提示: message
+  创建付款单按钮: userPaymentCreate
+  收款账户谭兴卫按钮: userPaymentPayeeTanxingweiOption
+  用户侧交易编号搜索框: userPaymentTradeNoSearch
+  用户侧搜索按钮: userPaymentSearch
+  收款账户下拉框: userPaymentPayeeSelect
+  资产余额下拉框: userPaymentAssetSelect
+  提现金额输入框: userPaymentAmountInput
+  附言输入框: userPaymentRemarkInput
+  邮箱验证码输入框: userPaymentCodeInput
+  获取验证码按钮: userPaymentSendCode
+  提交付款申请按钮: userPaymentSubmit
+  用户侧首行交易编号文本: userPaymentFirstTradeNoText
+  用户侧付款状态文本: userPaymentStatusText
+  管理端交易编号搜索框: adminCashTradeNoSearch
+  管理端搜索按钮: adminCashSearch
+  管理端更多操作按钮: adminCashRowMore
+  管理端首行交易编号文本: adminCashFirstTradeNoText
+  付款审核按钮: adminCashReviewAction
+  上传结果按钮: adminCashUploadResultAction
+  管理端付款状态文本: adminCashStatusText
+  通过按钮: adminCashApproveButton
+  审核确认按钮: adminCashApproveConfirm
+  付款成功按钮: adminCashSuccessButton
+  付款成功确认按钮: adminCashSuccessConfirm
+  系统日志目标号码输入框: adminSystemLogTargetInput
+  系统日志搜索按钮: adminSystemLogSearch
+  系统日志内容文本: adminSystemLogContentText

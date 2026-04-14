@@ -44,3 +44,4 @@ phases:
       params:
         session: "${session}"
         target: "登录按钮"
+        waitFor: "login_ready"

@@ -43,11 +43,11 @@ mainSteps:
 assertions:
   - id: assert_admin_login_page
     type: web_assert_url
-    name: 校验 admin 会话仍位于 admin 站点
+    name: 校验 admin 会话进入 admin 首页
     params:
       session: admin
       site: admin
-      expected: "#/login"
+      expected: "/admin/#/dashboard"
       timeout: 10000
 
   - id: assert_user_dashboard_page

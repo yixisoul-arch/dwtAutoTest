@@ -14,6 +14,7 @@ interface BrowserAgentLike {
       textContent(): Promise<string | null>;
       screenshot(options: { path: string }): Promise<void>;
     };
+    evaluate<R>(pageFunction: () => R | Promise<R>): Promise<R>;
     url(): string;
     screenshot(options: { path: string }): Promise<void>;
     setDefaultNavigationTimeout(timeout: number): void;
@@ -79,6 +80,8 @@ export class WebEngine {
       }
       case 'web_click': {
         const locator = this.resolveTarget(String(step.params.target ?? ''));
+        const timeoutMs = Number(step.params.timeout ?? this.config.navigationTimeout ?? 30000);
+        await this.waitForRequestedState(agent, step.params.waitFor, timeoutMs);
         await agent.page.locator(locator).click();
         return { session: sessionName, target: step.params.target };
       }
@@ -131,6 +134,63 @@ export class WebEngine {
 
   private resolveTarget(target: string): string {
     return buildLocator(this.registry.resolve(target));
+  }
+
+  private async waitForRequestedState(agent: BrowserAgentLike, waitFor: unknown, timeoutMs: number): Promise<void> {
+    if (waitFor === undefined) {
+      return;
+    }
+
+    if (waitFor === 'login_ready') {
+      await this.waitForLoginReady(agent, timeoutMs);
+      return;
+    }
+
+    throw new ExecutionError(`不支持的页面等待条件: ${String(waitFor)}`);
+  }
+
+  private async waitForLoginReady(agent: BrowserAgentLike, timeoutMs: number): Promise<void> {
+    const startedAt = Date.now();
+
+    while (Date.now() - startedAt <= timeoutMs) {
+      const ready = await agent.page.evaluate(() => {
+        const keys = Object.keys(window.localStorage);
+        for (const key of keys) {
+          if (key !== 'app.config' && !key.endsWith(':app.config')) {
+            continue;
+          }
+
+          const raw = window.localStorage.getItem(key);
+          if (!raw) {
+            continue;
+          }
+
+          try {
+            const parsed = JSON.parse(raw);
+            if (
+              parsed &&
+              typeof parsed === 'object' &&
+              typeof (parsed as { rsaPubKey?: unknown }).rsaPubKey === 'string' &&
+              (parsed as { rsaPubKey: string }).rsaPubKey.trim().length > 0
+            ) {
+              return true;
+            }
+          } catch {
+            continue;
+          }
+        }
+
+        return false;
+      });
+
+      if (ready) {
+        return;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+
+    throw new ExecutionError('等待登录页公钥配置超时');
   }
 
   private async waitForUrlContains(sessionName: string, expected: string, timeoutMs: number): Promise<string> {

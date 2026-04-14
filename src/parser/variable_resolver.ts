@@ -62,20 +62,39 @@ export const buildVariableScope = (
 
 export const resolveVariables = <T>(value: T, scope: Record<string, unknown>): T => resolveNode(value, scope);
 
+const applyRegexExtract = (value: unknown, pattern: string): unknown => {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  const match = String(value).match(new RegExp(pattern));
+  if (!match) {
+    return undefined;
+  }
+
+  return match[1] ?? match[0];
+};
+
 export const extractByPath = (payload: unknown, expression: string): unknown => {
   if (payload === undefined) {
     return undefined;
   }
 
+  const [pathExpression, regexPattern] = expression.split('|regex:');
   const normalizedPayload =
     payload === null || typeof payload === 'string' || typeof payload === 'number' || typeof payload === 'boolean'
       ? payload
       : (payload as object | unknown[]);
 
-  const result = JSONPath({ path: expression, json: normalizedPayload });
+  const result = JSONPath({ path: pathExpression, json: normalizedPayload });
   if (!Array.isArray(result) || result.length === 0) {
     return undefined;
   }
 
-  return result[0];
+  const extracted = result[0];
+  if (!regexPattern) {
+    return extracted;
+  }
+
+  return applyRegexExtract(extracted, regexPattern);
 };

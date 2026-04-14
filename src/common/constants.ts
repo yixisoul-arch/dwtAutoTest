@@ -10,6 +10,7 @@ export const SUPPORTED_STEP_TYPES = new Set([
   'api_assert_field',
   'db_init',
   'db_cleanup',
+  'db_query',
   'db_assert',
 ]);
 

@@ -1,0 +1,434 @@
+caseId: TC_USER_PAYOUT_ADMIN_APPROVE_001
+caseName: 用户发起付款单并由管理端审批至成功
+description: 用户登录后发起付款申请，管理端审核通过并上传付款成功结果，最终校验用户侧与数据库状态均为成功
+tags:
+  - payout
+  - withdraw
+  - admin
+  - user
+  - web
+  - db
+  - regression
+priority: P0
+mode: hybrid
+config:
+  retryCount: 1
+  timeout: 60000
+  screenshotOnFail: true
+  stopOnFailure: true
+  stepDelayMs:
+    min: 3000
+    max: 5000
+variables:
+  adminAccount:
+    username: "13549508100"
+    password: "XX431022."
+  userAccount:
+    username: "1907486821@qq.com"
+    password: "XX431022."
+    userId: "U20260120000002"
+  withdrawAmount: 1000
+  withdrawCurrency: "USD"
+
+beforeActions: []
+
+mainSteps:
+  - use: common/web_login
+    with:
+      session: admin
+      site: admin
+      username: "${adminAccount.username}"
+      password: "${adminAccount.password}"
+      url: "#/login"
+
+  - id: assert_admin_dashboard
+    type: web_assert_url
+    name: 校验管理端登录成功
+    params:
+      session: admin
+      site: admin
+      expected: "/admin/#/dashboard"
+      timeout: 30000
+
+  - use: common/web_login
+    with:
+      session: user
+      site: user
+      username: "${userAccount.username}"
+      password: "${userAccount.password}"
+      url: "#/login?redirect=%2Fdashboard"
+
+  - id: assert_user_dashboard
+    type: web_assert_url
+    name: 校验用户侧登录成功
+    params:
+      session: user
+      site: user
+      expected: "#/dashboard"
+      timeout: 30000
+
+  - id: open_user_payment_page
+    type: web_open
+    name: 打开用户付款页
+    params:
+      session: user
+      site: user
+      url: "#/client/payment?activeName=record"
+
+  - id: click_create_payment
+    type: web_click
+    name: 点击创建付款单
+    params:
+      session: user
+      target: "创建付款单按钮"
+
+  - id: input_withdraw_amount
+    type: web_input
+    name: 输入提现金额
+    params:
+      session: user
+      target: "提现金额输入框"
+      value: "${withdrawAmount}"
+
+  - id: open_payee_dropdown
+    type: web_click
+    name: 打开收款账户下拉
+    params:
+      session: user
+      target: "收款账户下拉框"
+
+  - id: choose_payee_tanxingwei
+    type: web_click
+    name: 选择收款账户谭兴卫
+    params:
+      session: user
+      target: "收款账户谭兴卫按钮"
+
+  - id: query_previous_email_code_log
+    type: db_query
+    name: 查询发送前最新邮箱验证码日志
+    params:
+      sql: "SELECT id, createTime FROM dc_sms_log WHERE targetNo = '${userAccount.username}' AND smsType = 'EMAIL' AND status = 'STATUS_SEND_SUCCESS' ORDER BY createTime DESC LIMIT 1"
+    extract:
+      previousEmailLogId: '$.rows[0].id'
+
+  - id: click_send_email_code
+    type: web_click
+    name: 获取邮箱验证码
+    params:
+      session: user
+      target: "获取验证码按钮"
+
+  - id: activate_email_code_input
+    type: web_click
+    name: 激活邮箱验证码输入框
+    params:
+      session: user
+      target: "邮箱验证码输入框"
+
+  - id: query_latest_email_code
+    type: db_query
+    name: 查询最新邮箱验证码
+    params:
+      sql: "SELECT id, content, createTime FROM dc_sms_log WHERE targetNo = '${userAccount.username}' AND smsType = 'EMAIL' AND status = 'STATUS_SEND_SUCCESS' AND id > '${context.previousEmailLogId}' ORDER BY createTime DESC LIMIT 1"
+      timeout: 15000
+      pollInterval: 500
+    extract:
+      emailCode: '$.rows[0].content|regex:验证码:(\d{6})'
+      latestEmailLogId: '$.rows[0].id'
+
+  - id: input_email_code
+    type: web_input
+    name: 输入邮箱验证码
+    params:
+      session: user
+      target: "邮箱验证码输入框"
+      value: "${context.emailCode}"
+
+  - id: query_previous_withdraw_order
+    type: db_query
+    name: 查询提交前最新提现单
+    params:
+      sql: "SELECT id, transNo, createTime FROM dc_transaction WHERE transType = 'WITHDRAW' AND userId = '${userAccount.userId}' AND amount = ${withdrawAmount} AND currency = '${withdrawCurrency}' ORDER BY createTime DESC LIMIT 1"
+    extract:
+      previousWithdrawId: '$.rows[0].id'
+
+  - id: submit_payment_apply
+    type: web_click
+    name: 提交付款申请
+    params:
+      session: user
+      target: "提交付款申请按钮"
+
+  - id: reopen_user_payment_page
+    type: web_open
+    name: 重新打开用户付款记录页
+    params:
+      session: user
+      site: user
+      url: "#/client/payment?activeName=record"
+
+  - id: query_latest_withdraw_order
+    type: db_query
+    name: 查询最新提现单号
+    params:
+      sql: "SELECT id, transNo, transStatus, amount, currency, payeeAccountName, createTime FROM dc_transaction WHERE transType = 'WITHDRAW' AND userId = '${userAccount.userId}' AND amount = ${withdrawAmount} AND currency = '${withdrawCurrency}' AND id > '${context.previousWithdrawId}' ORDER BY createTime DESC LIMIT 1"
+      timeout: 15000
+      pollInterval: 500
+    extract:
+      withdrawRecordId: '$.rows[0].id'
+      withdrawTransNo: '$.rows[0].transNo'
+      withdrawDbStatus: '$.rows[0].transStatus'
+      withdrawPayeeName: '$.rows[0].payeeAccountName'
+
+  - id: search_user_withdraw_trans_no
+    type: web_input
+    name: 用户侧输入提现编号查询
+    params:
+      session: user
+      target: "用户侧交易编号搜索框"
+      value: "${context.withdrawTransNo}"
+
+  - id: click_user_withdraw_search
+    type: web_click
+    name: 用户侧点击搜索
+    params:
+      session: user
+      target: "用户侧搜索按钮"
+
+  - id: assert_user_record_trans_no
+    type: web_assert_text
+    name: 用户侧校验提现编号
+    params:
+      session: user
+      target: "用户侧首行交易编号文本"
+      expected: "${context.withdrawTransNo}"
+      timeout: 30000
+
+  - id: assert_user_record_waiting
+    type: web_assert_text
+    name: 用户侧校验初始状态待处理
+    params:
+      session: user
+      target: "用户侧付款状态文本"
+      expected: "待处理"
+      timeout: 30000
+
+  - id: open_admin_cash_page
+    type: web_open
+    name: 打开管理端付款管理页
+    params:
+      session: admin
+      site: admin
+      url: "#/admin/order/cash"
+
+  - id: search_admin_withdraw_trans_no
+    type: web_input
+    name: 管理端输入提现编号查询
+    params:
+      session: admin
+      target: "管理端交易编号搜索框"
+      value: "${context.withdrawTransNo}"
+
+  - id: click_admin_cash_search
+    type: web_click
+    name: 管理端点击搜索
+    params:
+      session: admin
+      target: "管理端搜索按钮"
+
+  - id: assert_admin_record_trans_no
+    type: web_assert_text
+    name: 管理端校验提现编号
+    params:
+      session: admin
+      target: "管理端首行交易编号文本"
+      expected: "${context.withdrawTransNo}"
+      timeout: 30000
+
+  - id: assert_admin_record_waiting
+    type: web_assert_text
+    name: 管理端校验初始状态待处理
+    params:
+      session: admin
+      target: "管理端付款状态文本"
+      expected: "待处理"
+      timeout: 30000
+
+  - id: open_admin_review_menu
+    type: web_click
+    name: 打开管理端更多操作菜单
+    params:
+      session: admin
+      target: "管理端更多操作按钮"
+
+  - id: click_admin_review_action
+    type: web_click
+    name: 点击付款审核
+    params:
+      session: admin
+      target: "付款审核按钮"
+
+  - id: click_admin_approve
+    type: web_click
+    name: 点击通过按钮
+    params:
+      session: admin
+      target: "通过按钮"
+
+  - id: confirm_admin_approve
+    type: web_click
+    name: 确认审核通过
+    params:
+      session: admin
+      target: "审核确认按钮"
+
+  - id: reopen_admin_cash_page_after_approve
+    type: web_open
+    name: 审核后重新打开付款管理页
+    params:
+      session: admin
+      site: admin
+      url: "#/admin/order/cash"
+
+  - id: search_admin_trans_no_after_approve
+    type: web_input
+    name: 审核后管理端输入提现编号查询
+    params:
+      session: admin
+      target: "管理端交易编号搜索框"
+      value: "${context.withdrawTransNo}"
+
+  - id: click_admin_search_after_approve
+    type: web_click
+    name: 审核后管理端点击搜索
+    params:
+      session: admin
+      target: "管理端搜索按钮"
+
+  - id: assert_admin_record_processing
+    type: web_assert_text
+    name: 管理端校验状态变为处理中
+    params:
+      session: admin
+      target: "管理端付款状态文本"
+      expected: "处理中"
+      timeout: 60000
+
+  - id: assert_db_processing
+    type: db_assert
+    name: 数据库校验状态变为处理中
+    params:
+      sql: "SELECT transStatus FROM dc_transaction WHERE transNo = '${context.withdrawTransNo}'"
+      expected:
+        transStatus: "PROCESSING"
+
+  - id: open_admin_success_menu
+    type: web_click
+    name: 再次打开管理端更多操作菜单
+    params:
+      session: admin
+      target: "管理端更多操作按钮"
+
+  - id: click_admin_upload_result_action
+    type: web_click
+    name: 点击上传结果
+    params:
+      session: admin
+      target: "上传结果按钮"
+
+  - id: click_admin_payment_success
+    type: web_click
+    name: 点击付款成功
+    params:
+      session: admin
+      target: "付款成功按钮"
+
+  - id: confirm_admin_payment_success
+    type: web_click
+    name: 确认付款成功
+    params:
+      session: admin
+      target: "付款成功确认按钮"
+
+assertions:
+  - id: reopen_admin_cash_page_for_final_assert
+    type: web_open
+    name: 最终校验前重新打开管理端付款管理页
+    params:
+      session: admin
+      site: admin
+      url: "#/admin/order/cash"
+
+  - id: search_admin_trans_no_for_final_assert
+    type: web_input
+    name: 最终校验前管理端输入提现编号查询
+    params:
+      session: admin
+      target: "管理端交易编号搜索框"
+      value: "${context.withdrawTransNo}"
+
+  - id: click_admin_search_for_final_assert
+    type: web_click
+    name: 最终校验前管理端点击搜索
+    params:
+      session: admin
+      target: "管理端搜索按钮"
+
+  - id: assert_admin_record_success
+    type: web_assert_text
+    name: 管理端校验最终状态已成功
+    params:
+      session: admin
+      target: "管理端付款状态文本"
+      expected: "已成功"
+      timeout: 60000
+
+  - id: assert_db_success
+    type: db_assert
+    name: 数据库校验最终状态成功
+    params:
+      sql: "SELECT transStatus FROM dc_transaction WHERE transNo = '${context.withdrawTransNo}'"
+      expected:
+        transStatus: "SUCCESS"
+
+  - id: reopen_user_payment_page_for_final_assert
+    type: web_open
+    name: 最终校验前重新打开用户付款记录页
+    params:
+      session: user
+      site: user
+      url: "#/client/payment?activeName=record"
+
+  - id: search_user_trans_no_for_final_assert
+    type: web_input
+    name: 最终校验前用户侧输入提现编号查询
+    params:
+      session: user
+      target: "用户侧交易编号搜索框"
+      value: "${context.withdrawTransNo}"
+
+  - id: click_user_search_for_final_assert
+    type: web_click
+    name: 最终校验前用户侧点击搜索
+    params:
+      session: user
+      target: "用户侧搜索按钮"
+
+  - id: assert_user_record_success
+    type: web_assert_text
+    name: 用户侧校验最终状态已成功
+    params:
+      session: user
+      target: "用户侧付款状态文本"
+      expected: "已成功"
+      timeout: 60000
+
+  - id: save_final_success_screenshot
+    type: web_screenshot
+    name: 保存最终成功截图
+    params:
+      session: admin
+      fileName: "user_payout_admin_approve_success.png"
+
+afterActions: []

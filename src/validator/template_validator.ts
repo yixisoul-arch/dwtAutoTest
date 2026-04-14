@@ -13,6 +13,33 @@ const PHASES: Array<keyof Pick<TestCaseDefinition, 'beforeActions' | 'mainSteps'
 
 const VARIABLE_PATTERN = /\$\{([^}]+)\}/g;
 
+const validateStepDelayConfig = (testCase: TestCaseDefinition) => {
+  const stepDelayMs = testCase.config?.stepDelayMs;
+  if (stepDelayMs === undefined) {
+    return;
+  }
+
+  if (
+    stepDelayMs === null ||
+    typeof stepDelayMs !== 'object' ||
+    Array.isArray(stepDelayMs) ||
+    typeof stepDelayMs.min !== 'number' ||
+    Number.isNaN(stepDelayMs.min) ||
+    typeof stepDelayMs.max !== 'number' ||
+    Number.isNaN(stepDelayMs.max)
+  ) {
+    throw new ValidationError('stepDelayMs 配置无效，必须提供数值类型的 min 和 max');
+  }
+
+  if (stepDelayMs.min < 0 || stepDelayMs.max < 0) {
+    throw new ValidationError('stepDelayMs 配置无效，min 和 max 不能小于 0');
+  }
+
+  if (stepDelayMs.max < stepDelayMs.min) {
+    throw new ValidationError('stepDelayMs 配置无效，max 不能小于 min');
+  }
+};
+
 const validateStep = (step: StepDefinition, phase: string) => {
   if (!step.id || !step.type || !step.name || !step.params) {
     throw new ValidationError(`步骤缺少必填字段: ${phase}/${step.id || 'unknown'}`);
@@ -34,7 +61,7 @@ const validateStep = (step: StepDefinition, phase: string) => {
 
   if (step.type.startsWith('db_')) {
     const sql = step.params.sql;
-    if (typeof sql !== 'string') {
+    if (typeof sql !== 'string' || sql.trim().length === 0) {
       throw new ValidationError(`数据库步骤缺少 sql: ${step.id}`);
     }
     validateSqlSafety(sql);
@@ -80,6 +107,8 @@ export const validateTemplate = (testCase: TestCaseDefinition): void => {
   if (!Array.isArray(testCase.mainSteps) || testCase.mainSteps.length === 0) {
     throw new ValidationError('mainSteps 不能为空');
   }
+
+  validateStepDelayConfig(testCase);
 
   const allSteps: StepDefinition[] = [];
   PHASES.forEach((phase) => {
